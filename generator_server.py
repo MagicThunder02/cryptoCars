@@ -10,4 +10,4 @@ class Oracle:
 
     def generate_flag(self):
         x = random.randint(1, 999)
-        return pow(g, x, p)
+        return pow(g, x, p), x

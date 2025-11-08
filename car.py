@@ -1,5 +1,5 @@
 import random
-from oracle_gen import Oracle
+from generator_server import Oracle
 
 
 class Car:
@@ -7,11 +7,13 @@ class Car:
         self.oracle = Oracle()
         self.owner_id = owner_id
         self.speed = 0
-        self.flags = [self.oracle.generate_flag() for _ in range(10)]
-        self.ct = None
 
-    def get_speed(self):
-        return self.speed
+        # Generate flags and store both encrypted and secret values
+        flag_data = [self.oracle.generate_flag() for _ in range(10)]
+        self.flags = [flag for flag, _ in flag_data]
+        self.secretFlags = [secret for _, secret in flag_data]
+
+        self.ct = None
 
     def set_speed(self, speed):
         self.speed = speed

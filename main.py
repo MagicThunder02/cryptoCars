@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from server import GameServer
+from principal_server import GameServer
 
 
 class GameGUI:
@@ -102,15 +102,36 @@ class GameGUI:
             row=5, column=0, columnspan=2, pady=15, sticky=(tk.W, tk.E)
         )
 
+        ttk.Label(middle_frame, text="Terrain:").grid(
+            row=6, column=0, pady=5, sticky=tk.W
+        )
+        self.terrain_var = tk.StringVar(value="Sunny")
+        terrain_combo = ttk.Combobox(
+            middle_frame,
+            textvariable=self.terrain_var,
+            values=["Sunny", "Rainy", "Snowy"],
+            state="readonly",
+        )
+        terrain_combo.grid(row=6, column=1, pady=5)
+        terrain_combo.bind("<<ComboboxSelected>>", lambda e: self.change_terrain())
+
+        ttk.Button(middle_frame, text="Prove Speed", command=self.prove_speed).grid(
+            row=7, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E)
+        )
+
+        ttk.Separator(middle_frame, orient=tk.HORIZONTAL).grid(
+            row=8, column=0, columnspan=2, pady=15, sticky=(tk.W, tk.E)
+        )
+
         ttk.Label(middle_frame, text="Race Registration:").grid(
-            row=6, column=0, columnspan=2, pady=5
+            row=9, column=0, columnspan=2, pady=5
         )
         ttk.Button(
             middle_frame, text="Register for Race", command=self.register_race
-        ).grid(row=7, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E))
+        ).grid(row=10, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E))
         ttk.Button(
             middle_frame, text="RUN RACE", command=self.run_race, style="Accent.TButton"
-        ).grid(row=8, column=0, columnspan=2, pady=10, sticky=(tk.W, tk.E))
+        ).grid(row=11, column=0, columnspan=2, pady=10, sticky=(tk.W, tk.E))
 
         right_frame = ttk.LabelFrame(main_frame, text="Cars Details", padding="10")
         right_frame.grid(row=1, column=2, padx=5, sticky=(tk.N, tk.S, tk.W, tk.E))
@@ -175,6 +196,12 @@ class GameGUI:
 
     def update_display(self):
         self.users_text.delete(1.0, tk.END)
+
+        # Show current terrain
+        current_terrain = self.server.get_current_terrain()
+        self.users_text.insert(tk.END, f"Current Terrain: {current_terrain}\n")
+        self.users_text.insert(tk.END, "=" * 30 + "\n\n")
+
         for user_id in ["Alice", "Bob", "Charlie"]:
             user = self.server.get_user(user_id)
             self.users_text.insert(tk.END, f"{user_id}\n")
@@ -263,6 +290,50 @@ class GameGUI:
 
         messagebox.showinfo("Race Complete", f"Winner: {winner}!")
         self.update_display()
+
+    def change_terrain(self):
+        new_terrain = self.terrain_var.get()
+        success = self.server.change_terrain(new_terrain)
+
+        if success:
+            messagebox.showinfo("Terrain Changed", f"Terrain changed to {new_terrain}!")
+            self.update_display()
+        else:
+            messagebox.showerror("Error", "Failed to change terrain")
+
+    def prove_speed(self):
+        user_id = self.user_var.get()
+        try:
+            car_index = int(self.car_var.get())
+        except ValueError:
+            messagebox.showerror("Error", "Please select a car")
+            return
+
+        success, msg, encrypted_speed, proven_speed, is_equal = self.server.prove_speed(
+            user_id, car_index
+        )
+
+        if success:
+            result_msg = f"Speed Verification for {user_id}'s Car {car_index}\n"
+            result_msg += "=" * 50 + "\n\n"
+            result_msg += (
+                f"🔒 Encrypted Speed (from homomorphic calc): {encrypted_speed}\n\n"
+            )
+            result_msg += (
+                f"🔓 Proven Speed (from secret flags):        {proven_speed}\n\n"
+            )
+            result_msg += "=" * 50 + "\n"
+
+            if is_equal:
+                result_msg += "\n✓ MATCH! The values are equal!\n"
+                result_msg += "Encryption/Decryption working correctly!"
+                messagebox.showinfo("Speed Proof Verification", result_msg)
+            else:
+                result_msg += "\n✗ NO MATCH! The values are different!\n"
+                result_msg += "Check your encryption/decryption implementation!"
+                messagebox.showwarning("Speed Proof Verification", result_msg)
+        else:
+            messagebox.showerror("Error", msg)
 
     def run(self):
         self.root.mainloop()
