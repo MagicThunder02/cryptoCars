@@ -17,7 +17,7 @@ Speed = g^(<x, z>)
 ```
 
 where:
-- `x` is the encrypted car vector (10 features)
+- `x` is the vector of flags, representing a car
 - `z = k * y` is a hidden evaluation vector
 - `g` is a generator of a cyclic group G of prime order p
 
@@ -25,16 +25,20 @@ where:
 
 The security model relies on three non-colluding servers:
 
-1. **Principal Server** - Holds master secret `S` and partial secret `k`
+1. **Generator Server**
+   - Creates random car instances
+   - Generates initial car attributes (flags)
+   - Produces partially encrypted car vectors `d = g^x`
+     
+2. **Principal Server**
+   - Finalize the encrypted cars
+   - Holds master secret `S` and partial secret `k`
    - Coordinates user interactions
    - Manages car creation and training
    - Computes final speed values
 
-2. **Generator Server** - Creates random car instances
-   - Generates initial car attributes (flags)
-   - Produces encrypted car vectors `d = g^x`
-
-3. **Speed Server** - Holds partial secret `y`
+4. **Speed Server**
+   - Holds partial secret `y`
    - Evaluates speed function with weather-dependent weights
    - Computes intermediate encrypted values
 
@@ -77,7 +81,7 @@ where `delta ∈ [-20, 20]` is the training adjustment. This modifies the underl
 
 ### Weather System
 
-The Speed Server maintains different weight vectors for terrain conditions:
+The Speed Server maintains different weight vectors `y` for weather conditions:
 - **Sunny** - Standard weights
 - **Rainy** - Different performance profile  
 - **Snowy** - Alternative weight distribution
